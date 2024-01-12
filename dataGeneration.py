@@ -15,7 +15,7 @@ def calculateGravity(radius,density):#Radius is in km and density is in g/cm^3
     gravity= (gravConstant*mass)/(radius**2) / 1000000#To get it into right units
     return gravity
 def createParameterFile(parameters,filePath):
-    with open(r'C:\Users\Tristan\Downloads\Science fair 2023\Data\template.txt', 'r') as original_file:
+    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
         # Read the contents of the original file
         template = original_file.read()
 
@@ -65,13 +65,13 @@ starDistances=[i for i in range(10,50,10)]#The range for the star distances
 
 HITRANValues={"N2":"HIT[22]","O2":"HIT[7]","CO2":"HIT[2]","He":"HIT[0]0","CH4":"HIT[6]","H2":"HIT[45]","H2O":"HIT[1]"}#For the parameter atmosphere-type
 
-trainingFilePath=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Training'
+trainingFilePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
 
 #Just create folders for each molecule, svm will be one vs all, this will still let it allow to classify multiple molecules.
 
 #Creating the relevant folder for each molecule
 for molecule in molecules.values():
-    newPath=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Training'
+    newPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
     newPath+=f'\{molecule}'
     os.makedirs(newPath)
 #Consider changnign molecule abundance to percentage and change it to 100%, this makes it so the data isn't a straight line.
@@ -99,17 +99,17 @@ for molecule in molecules:
 
                     starDistance=random.choice(starDistanceRange)
                     parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
-                    parameterFolder=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Parameters'
-                    dataFolder=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Training'+f'\{molecules[molecule]}'
-                    parameterFile=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Parameters' + f'\{molecules[molecule]}{counter}'+'.txt'
+                    parameterFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters'
+                    dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'+f'\{molecules[molecule]}'
+                    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{molecules[molecule]}{counter}'+'.txt'
                     createParameterFile(parameters,parameterFile)
                     #Upload to PSG API recieve data, add to training data folder
                     curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
                     output=subprocess.check_output(curlCommand,shell=True,text=True)
                     
-                    with open(r'C:\Users\Tristan\Downloads\Science fair 2023\Data\temp.txt','w') as dataFile:
+                    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
                         dataFile.write(output)
-                        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\Science fair 2023\Data\temp.txt')
+                        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
                         writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
                         dataFile.close()
                     
@@ -133,16 +133,16 @@ for i in range(2380):
         starRad=random.choice(yelDwarfRad)
     gravity=calculateGravity(rad,density)
     parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
-    dataFolder=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Testing'
-    parameterFile=r'C:\Users\Tristan\Downloads\Science fair 2023\Data\Testing\param.txt'
+    dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing'
+    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing\param.txt'
     createParameterFile(parameters,parameterFile)
     #Upload to PSG API recieve data, add to training data folder
     curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
     output=subprocess.check_output(curlCommand,shell=True,text=True)
     
-    with open(r'C:\Users\Tristan\Downloads\Science fair 2023\Data\temp.txt','w') as dataFile:
+    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
         dataFile.write(output)
-        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\Science fair 2023\Data\temp.txt')
+        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
         writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
         dataFile.close()
     
