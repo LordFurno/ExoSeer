@@ -104,7 +104,7 @@ for molecule in molecules:
                     parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{molecules[molecule]}{counter}'+'.txt'
                     createParameterFile(parameters,parameterFile)
                     #Upload to PSG API recieve data, add to training data folder
-                    curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
+                    curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
                     output=subprocess.check_output(curlCommand,shell=True,text=True)
                     
                     with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
@@ -137,7 +137,7 @@ for i in range(2380):
     parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing\param.txt'
     createParameterFile(parameters,parameterFile)
     #Upload to PSG API recieve data, add to training data folder
-    curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
+    curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
     output=subprocess.check_output(curlCommand,shell=True,text=True)
     
     with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
