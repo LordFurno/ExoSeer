@@ -1,1 +1,28 @@
 import lightkurve as lk
+def getLightcurveData(observation,cadence):
+    search_result=lk.search_lightcurve(mission=observation,author="Kepler",exptime=cadence)
+    if list(search_result)!=[]:#Some parameter is wrong
+        return "Error"
+    lc_collection=search_result.download_all()
+    #.stitch removes the offset between the different observations
+    #.flatten() applies the Savitzky-Golay filter
+    #.remove_outliers() 
+    lc=lc_collection.stitch().flatten(window_length=901).remove_outliers()
+    return lc
+
+def getBLSData(periodSearch,lightcurve):
+    bls=lightcurve.to_periodogram(method='bls',period=periodSearch,frequency_factor=500)
+    return bls
+def extractPlanetData(blsData):
+    planetPeriod = blsData.period_at_max_power
+    planetT0 = blsData.transit_time_at_max_power
+    planetDur = blsData.duration_at_max_power
+    planetModel=blsData.get_transit_model(period=planetPeriod, transit_time=planetT0,duration=planetDur)
+    return (planetPeriod,planetT0,planetDur,planetModel)
+def createCadenceMask(blsData,period,t0,dur):
+    cadenceMask=blsData.get_transit_mask(period=period,transit_time=t0,duration=dur)
+    return cadenceMask
+def applyCadenceMask(lightcurve,mask):
+    maskedLc=lightcurve[~mask]
+    return maskedLc
+
