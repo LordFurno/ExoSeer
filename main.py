@@ -5,13 +5,10 @@ import numpy as np
 def isValid(value,valueType):#Check if a value is valid or not
     if valueType=="keplerMission":
         if value.isnumeric()==False:
-            print("huh")
             return False
         if value.isnumeric()==True and int(value)>1000:
-            print("tf")
             return False
         if value.isnumeric()==True and int(value)<=0:
-            print("nope")
             return False
     elif valueType=="period":
         if value.isnumeric()==False:
