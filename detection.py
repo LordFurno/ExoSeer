@@ -1,7 +1,8 @@
 import lightkurve as lk
 def getLightcurveData(observation,cadence):
-    search_result=lk.search_lightcurve(mission=observation,author="Kepler",exptime=cadence)
-    if list(search_result)!=[]:#Some parameter is wrong
+    search_result=lk.search_lightcurve(observation,author="Kepler",exptime=cadence)
+
+    if list(search_result)==[]:#Some parameter is wrong
         return "Error"
     lc_collection=search_result.download_all()
     #.stitch removes the offset between the different observations
