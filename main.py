@@ -33,6 +33,7 @@ layout = [  [sg.Text("Kepler mission number:"), sg.InputText()],
             [sg.Text('Period search: '),sg.InputText()],
             [sg.Button('Display light curve')],
             [sg.Button('Display BLS graph')],
+            [sg.Button('Get planetary data')],
             [sg.Text("",font=('Arial Bold',15),key="-keplerMissionStatus-")],
             [sg.Text("",font=('Arial Bold',15),key="-periodStatus-")],
             [sg.Text("",font=('Arial Bold',10),key="-cadenceStatus-")]]
@@ -41,6 +42,8 @@ layout = [  [sg.Text("Kepler mission number:"), sg.InputText()],
 
 # Create the Window
 lc=None
+bls=None
+planets={}#Planet: [period,t0,duration]
 window = sg.Window('Window Title', layout,size=(550,300))
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
@@ -74,7 +77,7 @@ while True:
 
         if event=="Display BLS graph" and isValid(keplerMission,"keplerMission") and isValid(searchPeriod,"period"):
             period=np.linspace(1,int(searchPeriod),10000)
-
+            clearErrors()
             if lc is not None and type(lc)!=str:
                     bls=detection.getBLSData(period,lc)
                     bls.plot()
@@ -91,6 +94,25 @@ while True:
                     bls.plot()
                     plt.show(block=True)
                 #Need to get lc
+        if event=="Get planetary data" and isValid(keplerMission,"keplerMission") and isValid(searchPeriod,"period"):
+            clearErrors()
+            period=np.linspace(1,int(searchPeriod),10000)
+            if lc is not None and type(lc)!=str:
+                print("Calculating planets")
+                planets=detection.findPlanets(period,lc)
+                print(f"Planets: {planets}")
+            else:
+                print("Getting light curve")
+                lc=detection.getLightcurveData("Kepler-"+str(keplerMission),cadence)
+ 
+                if type(lc)==str:
+                    window["-cadenceStatus-"].update("Error: Cadence does not exsist, please change to another cadence.")
+                else:
+                    print("Calculating planets")
+                    planets=detection.findPlanets(period,lc)
+                    print(f"Planets: {planets}")
+
+
 
 
 
