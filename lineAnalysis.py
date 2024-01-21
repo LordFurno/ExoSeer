@@ -74,8 +74,7 @@ def getMoleculeData():
             os.remove(headerFilePath)
         except:
             pass
-def dipFinder(filePath,molecule):#filePath is the exoplanet csv file. MOlecule is just the name of the molecule to find dips.
-    moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
+def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just the name of the molecule to find dips.
 
 
     df=pd.read_csv(filePath)
@@ -86,6 +85,10 @@ def dipFinder(filePath,molecule):#filePath is the exoplanet csv file. MOlecule i
     dipLocation=[wavelengths[i] for i in dipIndexes]#Gets what wavelength they are at
     dipValue=[transitDepths[i] for i in dipIndexes]#Gets the transit detph at that point
 
+    return (dipLocation,dipValue)
+
+def detectMolecule(molecule):
+    moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
     moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None)#Sep is how the values are seperated in the data
 
     molecWavelength=[]
