@@ -84,7 +84,7 @@ def dipFinder(filePath,molecule):#filePath is the exoplanet csv file. MOlecule i
     derivative=np.gradient(transitDepths,wavelengths)
     dipIndexes=np.where(derivative<0)[0]
     dipLocation=[wavelengths[i] for i in dipIndexes]#Gets what wavelength they are at
-    dipValue=[transitDepths[i] for i in dipIndexes]
+    dipValue=[transitDepths[i] for i in dipIndexes]#Gets the transit detph at that point
 
     moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None)#Sep is how the values are seperated in the data
 
