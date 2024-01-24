@@ -5,6 +5,18 @@ import numpy as np
 import pandas as pd
 def convertCMtoUM(cm):#Convrets cm^-1 to microns
    return 10000/cm 
+def calculatePercentDiff(val1,val2):
+    numerator=abs(val1-val2)
+    denominator= (val1+val2)/2
+    return numerator/denominator
+def calculateConfidence(observedScores):
+    mean=np.mean(observedScores)
+    standardDeviation=np.std(observedScores)
+    zScore=(observedScores-mean)/standardDeviation
+    averageZscore=np.mean(zScore)
+    normalizedScore=(averageZscore - np.min(zScore)) / (np.max(zScore) - np.min(zScore)) * 100
+    return normalizedScore*100
+
 def getMoleculeData():
     names={
         1:"H2O",
@@ -87,19 +99,46 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
 
     return (dipLocation,dipValue)
 
-def detectMolecule(molecule):
+def overlayMolecule(molecule,dipLocation):
     moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
-    moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None)#Sep is how the values are seperated in the data
-
+    moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None,engine="python")#Sep is how the values are seperated in the data
+    # print(moleculeData)
+    # print(moleculeData.iloc[:,0])
+    dipLocation=set(dipLocation)
     molecWavelength=[]
     molecIntensity=[]
-    for col in range(len(moleculeData)):
-        value=str(moleculeData.iloc[:,col][0])
-        value.split(' ')
-        molecWavelength.append(value[1])
-        molecIntensity.append(value[2])
+    for row in range(len(moleculeData)):
+        value=str(moleculeData.iloc[row][0])
 
-    
+        value=value.split(' ')
+        # print(value)
+        molecWavelength.append(convertCMtoUM(float(value[1])))#Converts to micrometers
+        molecIntensity.append(float(value[2]))
+    maxIntensity=max(molecIntensity)
+
+
+    scores=[]
+    for i,a in enumerate(molecWavelength):
+        # print(i)
+        difference=abs(min(dipLocation,key=lambda x:abs(x-a)) - a)
+        #Have to come up with a scoring system
+        
+        
+        if difference<=0.0001:#Need to find what is qualified as "lines up", it doesn't have to be exactly the same, just very close
+            relativeIntensity=(molecIntensity[i]/maxIntensity)*100
+            score=relativeIntensity*difference
+            scores.append(score)
+    return calculateConfidence(scores)
+
+
+
+
+
+location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
+print("dips found")
+print(overlayMolecule("CO2",location))
+# print(numberOfLines)
+
     
 
  
