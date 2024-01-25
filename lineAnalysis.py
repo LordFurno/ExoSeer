@@ -9,13 +9,18 @@ def calculatePercentDiff(val1,val2):
     numerator=abs(val1-val2)
     denominator= (val1+val2)/2
     return numerator/denominator
-def calculateConfidence(observedScores):
-    mean=np.mean(observedScores)
-    standardDeviation=np.std(observedScores)
-    zScore=(observedScores-mean)/standardDeviation
-    averageZscore=np.mean(zScore)
-    normalizedScore=(averageZscore - np.min(zScore)) / (np.max(zScore) - np.min(zScore)) * 100
-    return normalizedScore*100
+def getZScore(average,dataPoint,standardDeviation):#Gets the z-score for a data point
+    return (dataPoint-average)/standardDeviation
+def normalize(arr):#Nomralizes a list
+    return [i/max(arr) for i in arr]
+def getWeights(arr,molecIntensity):#Gets the weight for each line based on their intensity compared to the rest
+    maxIntensity=max(molecIntensity)
+    weights=[(molecIntensity[i]/maxIntensity) for i in arr]#Multiply by 100, because deicmal times deicmal just gets smaller
+    return weights
+def calculateWeightedAverage(weight,zScores):
+    weightedSum=sum(zScores[i]*weight[i]*100 for i in range(len(zScores)))
+    totalWeight=sum(weight)
+    return weightedSum/totalWeight
 
 def getMoleculeData():
     names={
@@ -99,9 +104,10 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
 
     return (dipLocation,dipValue)
 
-def overlayMolecule(molecule,dipLocation):
+def detectMolecule(molecule,dipLocation):
     moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
     moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None,engine="python")#Sep is how the values are seperated in the data
+
     # print(moleculeData)
     # print(moleculeData.iloc[:,0])
     dipLocation=set(dipLocation)
@@ -111,24 +117,39 @@ def overlayMolecule(molecule,dipLocation):
         value=str(moleculeData.iloc[row][0])
 
         value=value.split(' ')
-        # print(value)
+
         molecWavelength.append(convertCMtoUM(float(value[1])))#Converts to micrometers
         molecIntensity.append(float(value[2]))
-    maxIntensity=max(molecIntensity)
 
-
-    scores=[]
+    intensityMean=np.mean(molecIntensity)
+    intensityZscore=[]
+    standardDeviation=np.std(molecIntensity)
+    indexes=[]
     for i,a in enumerate(molecWavelength):
-        # print(i)
         difference=abs(min(dipLocation,key=lambda x:abs(x-a)) - a)
-        #Have to come up with a scoring system
-        
+
         
         if difference<=0.0001:#Need to find what is qualified as "lines up", it doesn't have to be exactly the same, just very close
-            relativeIntensity=(molecIntensity[i]/maxIntensity)*100
-            score=relativeIntensity*difference
-            scores.append(score)
-    return calculateConfidence(scores)
+            intensityZscore.append(getZScore(intensityMean,molecIntensity[i],standardDeviation))
+            indexes.append(i)
+            # scores.append(score)
+    if len(intensityZscore)>0:
+        
+        averageZScore=np.mean(intensityZscore)
+        closeness=abs(averageZScore)
+
+        if closeness<=0.001:#Is or above average
+            normalizedZ=normalize(intensityZscore)#Normalized all z scores
+            weights=getWeights(indexes,molecIntensity)#Calculates the weights for the line based on intensity
+            weightAverage=calculateWeightedAverage(weights,normalizedZ)#Gets the weighted average with the new weights
+  
+
+            percentMatch=len(intensityZscore)/len(molecIntensity)*100#Gets what percent of the lines match
+            #Maybe don't add them, should look into changing
+            return weightAverage+percentMatch
+            #Likeley that molecule exsists
+    else:
+        return 0#No overlay lines, so moolecule doesn't exsist
 
 
 
@@ -136,7 +157,7 @@ def overlayMolecule(molecule,dipLocation):
 
 location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
 print("dips found")
-print(overlayMolecule("CO2",location))
+print(detectMolecule("CO2",location))
 # print(numberOfLines)
 
     
