@@ -1,8 +1,8 @@
 import hapi
 import os
-import shutil
 import numpy as np
 import pandas as pd
+import PySimpleGUI as sg
 def convertCMtoUM(cm):#Convrets cm^-1 to microns
    return 10000/cm 
 def calculatePercentDiff(val1,val2):
@@ -155,11 +155,101 @@ def detectMolecule(molecule,dipLocation):
 
 
 
-location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
-print("dips found")
-print(detectMolecule("CO2",location))
+# location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
+# print("dips found")
+# print(detectMolecule("CO2",location))
 # print(numberOfLines)
 
-    
+names={
+        1:"H2O",
+        2:"CO2",
+        3:"O3",
+        4:"N2O",
+        5:"CO",	
+        6:"CH4",
+        7:"O2",	
+        8:"NO",	
+        9:"SO2",	
+        10:	"NO2",	
+        11:	"NH3",	
+        12:	"HNO3",	
+        13:	"OH",
+        14:	"HF",
+        15:	"HCl",
+        16:	"HBr",
+        17:	"HI",
+        18:	"ClO",
+        19:	"OCS",
+        20:	"H2CO",
+        21:	"HOCl",
+        22:	"N2",
+        23:	"HCN",
+        24:	"CH3Cl",
+        25:	"H2O2",
+        26:	"C2H2",
+        27:	"C2H6",
+        28:	"PH3",
+        29:	"COF2",
+        30:	"SF6",
+        31:	"H2S",
+        32:	"HCOOH",
+        33:	"HO2",
+        34:	"O",
+        35:	"ClONO2",
+        36:	"NO+",
+        37:	"HOBr",
+        38:	"C2H4",
+        39:	"CH3OH",
+        40:	"CH3Br",
+        41:	"CH3CN",
+        42:	"CF4",
+        43:	"C4H3",
+        44:	"HC3N",
+        45:	"H2",
+        46:	"CS",
+        47:	"SO3",
+        48:	"C2N2",
+        49:	"COC12",
+        50:	"SO",
+        51:	"CH3F",
+        52:	"GeH4",
+        53:	"CS2",
+        54:	"CH3I",
+        55:	"NF3",
+    }  
+
+sg.theme('DarkAmber')   # Add a touch of color
+# All the stuff inside your window.
+names=list(names.values())
+layout = [[sg.Text("Choose a folder: "), sg.Input(key="-PATH-" ,change_submits=True), sg.FileBrowse(key="-FILE-")],[sg.Button("Submit")],
+         [sg.Text('Molecule to detect: '), sg.Combo(names, font=('Arial Bold', 12),  expand_x=True, enable_events=True,  readonly=True, key='-MOLECULE-')],
+         [sg.Button("Calculate")],
+         [sg.Text("",key="-STATUS-")]
+         
+         
+         ]
+filePath=None
+window = sg.Window('Window Title', layout,size=(700,300))
+while True:
+    event, values = window.read()
+    if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
+        break
+    if event=="Submit":
+        filePath=values["-PATH-"]
+        if ".csv" not in filePath:
+            window["-STATUS-"].update("Please select a .csv file")
+        else:
+            dipLocation,dipValue=dipFinder(filePath)
+
+    if event=="Calculate":
+        if filePath!=None and values["-MOLECULE-"]!="":
+            molecule=values["-MOLECULE-"]
+            probability=detectMolecule(molecule,dipLocation)
+            print(f"The probability that {molecule} exsists in the atmosphere of this planet is: {probability}")
+
+            
+        
+
+
 
  

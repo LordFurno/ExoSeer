@@ -112,10 +112,6 @@ while True:
                     planets=detection.findPlanets(period,lc)
                     print(f"Planets: {planets}")
 
-
-
-
-
         #Need a text bos for errors (maybe status bar)
         print(list(values.items()))
         print(cadence)
