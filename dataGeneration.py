@@ -149,5 +149,42 @@ for i in range(2380):
     #First column of data is wavelength in um. (x axis)
     #6th column of data is contrast (y axis)
     counter+=1
+
+
+
+for molecule in molecules.values():
+    newPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\Not'
+    newPath+=f'{molecule}'#Fix the folder name
+    os.makedirs(newPath)
+for notMolecule in molecules:
+    for molecule in molecules:
+        if molecule!=notMolecule:
+            print((molecule,notMolecule))
+            counter=1
+            for i in range(226):#Create a dataset without these values.
+                star=random.choice(stars)
+                starDist=random.choice(starDistances)
+                density=random.choice(densities)
+                rad=random.randrange(4000,20000)
+                if star=="M":
+                    starTemp=random.choice(redDwarfTemp)
+                    starRad=random.choice(redDwarfRad)
+                else:
+                    starTemp=random.choice(yelDwarfTemp)
+                    starRad=random.choice(yelDwarfRad)
+                gravity=calculateGravity(rad,density)
+                parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
+                dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\Not'+f'{molecules[notMolecule]}'
+                parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing\param.txt'
+                createParameterFile(parameters,parameterFile)
+                curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
+                output=subprocess.check_output(curlCommand,shell=True,text=True)
+                
+                with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
+                    dataFile.write(output)
+                    extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
+                    writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
+                    dataFile.close()
+                counter+=1
 end=time.time()
 print(end-start)

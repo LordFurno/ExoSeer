@@ -1,12 +1,12 @@
-# WARNING | PUMAS | Molecule 'CH4' has abundance unit 'scl' but no profile was provided, disabling this molecule.
+# WARNING | PUMAS | Molecule 'H2' has abundance unit 'scl' but no profile was provided, disabling this molecule.
 # WARNING | PUMAS | Modeling multiple-scattering accurately for Rayleigh would require NMAX to be at least 1 and LMAX 2.
 # ------------------------------------------------------------------------
 # NASA-GSFC Planetary Spectrum Generator (PSG, Villanueva et al. 2018, 2022)
 # Atmospheric transmittance spectrum synthesized with PUMAS
-# Synthesized on Fri Jan 12 02:20:24 2024
+# Synthesized on Tue Jan 30 02:57:02 2024
 # Spectral unit: Wavelength [um]
 # ------------------------------------------------------------------------
-# Wave/freq Total CH4 Rayleigh CIA
+# Wave/freq Total H2 Rayleigh CIA
 4.000000000e-01 9.99999e-01 9.99999e-01 9.99999e-01 9.99999e-01
 4.020000000e-01 9.99999e-01 9.99999e-01 9.99999e-01 9.99999e-01
 4.040100000e-01 9.99999e-01 9.99999e-01 9.99999e-01 9.99999e-01
