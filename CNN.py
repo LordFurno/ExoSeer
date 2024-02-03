@@ -108,7 +108,9 @@ class Model(nn.Module):
 
 
 
-molecule="Nitrogen"
+torch.manual_seed(43)#So I can reproduce the results
+np.random.seed(43)
+molecule="Water"
 notName="Not"+molecule
 waterDataset=moleculeDataset(folderPath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\Training"+f"\{molecule}",molecule=molecule,transform=transforms.ToTensor())
 notWaterDataset=moleculeDataset(folderPath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\Training"+f"\{notName}",molecule=notName,transform=transforms.ToTensor())
@@ -135,15 +137,17 @@ validationLoader=DataLoader(validationDataset,batch_size=32,shuffle=True)
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model=Model().to(device)
 
-optimizer=optim.Adam(model.parameters(),lr=0.0017)
+optimizer=optim.Adam(model.parameters(),lr=0.001,weight_decay=0.001)
 # optimizer=optim.RMSprop(model.parameters(), lr=0.01)
+scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.0005)
 criterion=nn.BCELoss()
-torch.manual_seed(42)#So I can reproduce the results
+
+
 n=15
 losses=[]
 validCorrect=0
 validTotal=0
-for epoch in range(n):#It's really weird, only firstt value in batch is really accurate
+for epoch in range(n):
     for batch in trainDataloader:
         model.train()
         rawData,labels=batch
@@ -257,7 +261,9 @@ with torch.no_grad():
                         correct +=1
                 total+=1
 
-print(f"Accuracy on the test set: {100 * correct / total}%")
+cnnFilePath=r"C:\Users\Tristan\Downloads\ExoSeer"+f"\{molecule}CNN"
+torch.save(model.state_dict,cnnFilePath)
+print(f"Accuracy on the test set: {100 * correct / total}%") 
 plt.plot(losses)
 plt.ylabel("Training loss")
 plt.show(block=True)
