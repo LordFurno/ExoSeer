@@ -5,8 +5,13 @@ import math
 import subprocess
 import csv
 import time
+import itertools
 start=time.time()
 #Helper functions
+
+def getSubsets(arr):
+    return list(itertools.chain.from_iterable(itertools.combinations(arr,r) for r in range(len(arr)+1)))[1:]#To remove empty subset
+
 def calculateGravity(radius,density):#Radius is in km and density is in g/cm^3
     gravConstant=6.6743*(10**-11)
     volume=(radius**3)*(4/3)*math.pi * 1000000000#m^3
@@ -40,16 +45,51 @@ def getNumericalData(filePath):#Get numerical data from text file
             numericalValue=line.split()
             numericalData.append(numericalValue)
     return numericalData
-def writeToCSV(data,outputFilePath):#Converts numerical data into a csv file
+def writeToCSV(data,outputFilePath,extraMolecules):#Converts numerical data into a csv file
+    if extraMolecules!=[]:
+        for i in range(len(extraMolecules)):
+            temp=data[i]
+            temp.append(extraMolecules)
+            data[i]=temp
     with open(outputFilePath,"w",newline='') as f:
         writer=csv.writer(f)
         for row in data:
             writer.writerow(row)
+def createParameterFileTesting(parameters,filePath):
+    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
+        # Read the contents of the original file
+        template = original_file.read()
+    diff=['<ATMOSPHERE-NGAS>','<ATMOSPHERE-GAS>','<ATMOSPHERE-ABUN>','<ATMOSPHERE-UNIT>','<ATMOSPHERE-TYPE>']
+    #parameters is a dictionary with the parameters to be changed to what value
+    #Go through text file and modify it
+    with open(filePath,"r+") as f:
+        f.write(template)
+        lines=f.readlines()
+    
+    lines[42]='<ATMOSPHERE-NGAS>'+str(parameters['<ATMOSPHERE-NGAS>'])+"\n"
+    lines[43]='<ATMOSPHERE-GAS>'+str(parameters['<ATMOSPHERE-GAS>'])+"\n"
+    lines[45]='<ATMOSPHERE-ABUN>'+str(parameters['<ATMOSPHERE-ABUN>'])+"\n"
+    lines[46]='<ATMOSPHERE-UNIT>'+str(parameters['<ATMOSPHERE-UNIT>'])+"\n"
+    lines[44]='<ATMOSPHERE-TYPE>'+str(parameters['<ATMOSPHERE-TYPE>'])+"\n"
+    with open(filePath,"w") as file:
+        file.writelines(lines)
+    with open(filePath, "r+") as f:
+        
+        
+        content=f.read()
+        for p in parameters:
+            if p not in diff:
+            #Issue is that <atmosphere-nGas> I have to change, which mean I have to change the nubmers too
+
+                content=content.replace(p,p+str(parameters[p]))
+        f.seek(0)
+        f.write(content)
+        f.truncate()
+        f.close
 
 
 
-
-molecules={"N2":"Nitrogen","O2":"Oxygen","CO2":"CarbonDioxide","He":"Helium","CH4":"Methane","H2":"Hydrogen","H2O":"Water"}
+molecules={"N2":"Nitrogen","O2":"Oxygen","CO2":"CarbonDioxide","H2O":"Water"}
 stars=["M","G"]#Red dwarf and yellow dwarf 
 
 densities=[i/100 for i in range(50,600,10)]
@@ -63,128 +103,60 @@ yelDwarfRad=[i/100 for i in range(90,111)]
 
 starDistances=[i for i in range(10,50,10)]#The range for the star distances
 
-HITRANValues={"N2":"HIT[22]","O2":"HIT[7]","CO2":"HIT[2]","He":"HIT[0]0","CH4":"HIT[6]","H2":"HIT[45]","H2O":"HIT[1]"}#For the parameter atmosphere-type
+HITRANValues={"N2":"HIT[22]","O2":"HIT[7]","CO2":"HIT[2]","H2O":"HIT[1]"}#For the parameter atmosphere-type
 
 trainingFilePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
 
 #Just create folders for each molecule, svm will be one vs all, this will still let it allow to classify multiple molecules.
+moleculeSubsets=getSubsets(molecules.keys())
 
 #Creating the relevant folder for each molecule
-for molecule in molecules.values():
-    newPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
-    newPath+=f'\{molecule}'
-    os.makedirs(newPath)
-#Consider changnign molecule abundance to percentage and change it to 100%, this makes it so the data isn't a straight line.
+#For the data, ignore the # and colouring marks, the csv reader is wrong. 
 
-for molecule in molecules:
+
+#Consider changnign molecule abundance to percentage and change it to 100%, this makes it so the data isn't a straight line.
+for combination in moleculeSubsets:#16 iterations
+    folderPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
+    #How should I name the folder?
+    folderPath+=f'\{"-".join(combination)}'
+    os.makedirs(folderPath)
     counter=1
-    folderPath=trainingFilePath+f'{molecules[molecule]}'
-    for i in range(10):#1700 files for each molecule
+    for z in range(10):
         for star in stars:#2 iterations
             for j in starDistances:#5 iterations
                 starDistanceRange=[a/100 for a in range(j,j+11)]
                 for k in radius:#17 iterations
-                    
                     radiusRange=[b for b in range(k*1000,(k+1)*1000)]
-                    rad=random.choice(radiusRange)
+                    chosenRadius=random.choice(radiusRange)
                     density=random.choice(densities)
-                    starDist=random.choice(starDistanceRange)
+                    starDistance=random.choice(starDistanceRange)
                     if star=="M":
                         starTemp=random.choice(redDwarfTemp)
                         starRad=random.choice(redDwarfRad)
                     else:
                         starTemp=random.choice(yelDwarfTemp)
                         starRad=random.choice(yelDwarfRad)
-                    gravity=calculateGravity(rad,density)
+                    gravity=calculateGravity(chosenRadius,density)
 
-                    starDistance=random.choice(starDistanceRange)
-                    parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
+                    #Create parameters, ready to be applied in a text file
+                    parameters={'<OBJECT-DIAMETER>':chosenRadius*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDistance,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-NGAS>':len(combination),'<ATMOSPHERE-ABUN>':",".join(["1" for i in range(len(combination))]),'<ATMOSPHERE-UNIT>':",".join(["scl" for i in range(len(combination))])}
+                    parameters['<ATMOSPHERE-GAS>']=",".join(combination)
+                    hitranNames=[HITRANValues[a] for a in combination]
+                    parameters['<ATMOSPHERE-TYPE>']=",".join(hitranNames)
+
+
                     parameterFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters'
-                    dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'+f'\{molecules[molecule]}'
-                    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{molecules[molecule]}{counter}'+'.txt'
-                    createParameterFile(parameters,parameterFile)
-                    #Upload to PSG API recieve data, add to training data folder
-                    curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
+                    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{"-".join(combination)}-{counter}'+'.txt'
+                    createParameterFile(parameters,parameterFile)#Assume that this works
+
+                    curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
                     output=subprocess.check_output(curlCommand,shell=True,text=True)
-                    
                     with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
                         dataFile.write(output)
                         extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
-                        writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
+                        writeToCSV(extracted,folderPath+f'\{"-".join(combination)}-{counter}'+'.csv',[])
                         dataFile.close()
                     
                     #First column of data is wavelength in um. (x axis)
                     #6th column of data is contrast (y axis)
                     counter+=1
-
-print("Training data generated")
-counter=1
-for i in range(2380):
-    molecule=random.choice(list(molecules.keys()))
-    star=random.choice(stars)
-    starDist=random.choice(starDistances)
-    density=random.choice(densities)
-    rad=random.randrange(4000,20000)
-    if star=="M":
-        starTemp=random.choice(redDwarfTemp)
-        starRad=random.choice(redDwarfRad)
-    else:
-        starTemp=random.choice(yelDwarfTemp)
-        starRad=random.choice(yelDwarfRad)
-    gravity=calculateGravity(rad,density)
-    parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
-    dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing'
-    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing\param.txt'
-    createParameterFile(parameters,parameterFile)
-    #Upload to PSG API recieve data, add to training data folder
-    curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
-    output=subprocess.check_output(curlCommand,shell=True,text=True)
-    
-    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
-        dataFile.write(output)
-        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
-        writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
-        dataFile.close()
-    
-    #First column of data is wavelength in um. (x axis)
-    #6th column of data is contrast (y axis)
-    counter+=1
-
-
-
-for molecule in molecules.values():
-    newPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\Not'
-    newPath+=f'{molecule}'#Fix the folder name
-    os.makedirs(newPath)
-for notMolecule in molecules:
-    for molecule in molecules:
-        if molecule!=notMolecule:
-            print((molecule,notMolecule))
-            counter=1
-            for i in range(226):#Create a dataset without these values.
-                star=random.choice(stars)
-                starDist=random.choice(starDistances)
-                density=random.choice(densities)
-                rad=random.randrange(4000,20000)
-                if star=="M":
-                    starTemp=random.choice(redDwarfTemp)
-                    starRad=random.choice(redDwarfRad)
-                else:
-                    starTemp=random.choice(yelDwarfTemp)
-                    starRad=random.choice(yelDwarfRad)
-                gravity=calculateGravity(rad,density)
-                parameters={'<OBJECT-DIAMETER>':rad*2,'<OBJECT-GRAVITY>':gravity,'<OBJECT-STAR-DISTANCE>':starDist,'<OBJECT-STAR-TYPE>':star,'<OBJECT-STAR-TEMPERATURE>':starTemp,'<OBJECT-STAR-RADIUS>':starRad,'<ATMOSPHERE-GAS>':molecule,'<ATMOSPHERE-TYPE>':HITRANValues[molecule]} 
-                dataFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\Not'+f'{molecules[notMolecule]}'
-                parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Testing\param.txt'
-                createParameterFile(parameters,parameterFile)
-                curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
-                output=subprocess.check_output(curlCommand,shell=True,text=True)
-                
-                with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
-                    dataFile.write(output)
-                    extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
-                    writeToCSV(extracted,dataFolder+f'\{molecules[molecule]}{counter}'+'.csv')
-                    dataFile.close()
-                counter+=1
-end=time.time()
-print(end-start)
