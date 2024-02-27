@@ -164,6 +164,8 @@ for epoch in range(n):
         optimizer.zero_grad()
         outputs=model(data)
         loss=criterion(outputs,labels)
+        loss.backward()
+        optimizer.step()
 
     with torch.no_grad():#Validation loop
         for batch in validationLoader:
