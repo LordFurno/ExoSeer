@@ -69,21 +69,40 @@ class customDataset(Dataset):
 
         if self.transform:
             wavelength,total=np.array(wavelength),np.array(total)
-            wavelength,totalData=wavelength.reshape(1,-1),total.reshape(1,-1)
+            wavelength,total=wavelength.reshape(1,-1),total.reshape(1,-1)
             wavelength=self.transform(wavelength)
-            totalData=self.transform(totalData)
-            data=torch.stack([wavelength, totalData], dim=1)#Puts wavelength and molec data together in 1 tensor. 
+            total=self.transform(total)
+            data=torch.stack([wavelength,total],dim=0)#Combines the wavelength and total together, maintinas pairing
         return data,label#Wavelength, label
 
 
 class Model(nn.Module):
-    def __init__(self):#Need to remake my entire model
+    def __init__(self):
         super().__init__()
+        #Add proper inputs in brackets. Need to verify shape
+        self.conv1=nn.Conv2d(2,32, kernel_size=(1,3))
+        self.pool1=nn.MaxPool2d((1,2),stride=(1,2))
+        self.conv2=nn.Conv2d(32,16,kernel_size=(1,3))
+        self.fc1=nn.Linear(3104,32)#Shape of flattened tensor
+        self.fc2=nn.Linear(32,4)
         pass
-       
+
     def forward(self,x):
-        pass
-        
+        x=x.float()
+        x=x.squeeze(2)#Removes second dimension, it isn't needed
+
+        #Shape is torch.Size([32, 32, 1, 785]), might not be good that height is 1
+        x=self.pool1(F.relu(self.conv1(x)))
+
+        x=self.pool1(F.relu(self.conv2(x)))
+        x=x.view(x.size(0),-1)#Need proper size, to determine how to flatten
+
+        x=F.relu(self.fc1(x))
+        #Might need to apply an activation function to deal with negative values
+        output=self.fc2(x)
+        output=torch.sigmoid(output)
+        output=output.view(-1,4)
+        return output
 
 
 
@@ -114,21 +133,76 @@ validationLoader=DataLoader(validationDataset,batch_size=32,shuffle=True)
 
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-for batch in trainDataloader:
-    data,labels=batch[0],list(batch[1])
-    #Convert the labels into 1-hot encoding
-    #Each label will be an array that is 4 values long
-    #[0,0,0,0]
-    #The first value represents if N2 is present
-    #The second value represents if O2 is present
-    #The third value represents if CO2 is present
-    #The fourth value represents if H2O is present
-    for i,value in enumerate(labels):
-        labels[i]=oneHotEncoding(value)
-    print(data)
-    print(labels)
-    print(data.shape)
-    break
+
+model=Model().to(device)
+optimizer=optim.Adam(model.parameters(),lr=0.001)#Might need weight decay
+criterion=nn.CrossEntropyLoss()
+n=15
+losses=[]
+for epoch in range(n):
+    for batch in trainDataloader:
+        model.train()
+        data,labels=batch[0],list(batch[1])
+        #Convert the labels into 1-hot encoding
+        #Each label will be an array that is 4 values long
+        #[0,0,0,0]
+        #The first value represents if N2 is present
+        #The second value represents if O2 is present
+        #The third value represents if CO2 is present
+        #The fourth value represents if H2O is present
+        for i,value in enumerate(labels):
+            labels[i]=oneHotEncoding(value)
+        data=normalize(data,0.0,1.0)#Normalizing
+        data=data.to(torch.float64)
+        data=data.to(device)
+
+        labels=torch.tensor(labels)
+        labels=labels.to(device)
+        labels=labels.float()
+
+        #Running the model
+        optimizer.zero_grad()
+        outputs=model(data)
+        loss=criterion(outputs,labels)
+
+    with torch.no_grad():#Validation loop
+        for batch in validationLoader:
+            model.eval()
+            data,labels=batch[0],list(batch[1])
+            if list(data.size())[0]==32:#To make sure that it is proper size
+                data=normalize(data,0.0,1.0)
+                data=data.to(torch.float64)
+                data=data.to(device)
+                for i,values in enumerate(labels):
+                    labels[i]=oneHotEncoding(value)
+                labels=labels.to(device)
+                outputs=model(data)
+                validCorrect=0
+                validTotal=0
+                for i,a in enumerate(outputs):
+                    res=[0.0]*4
+                    if a[0]>0.5:
+                        #N2 is present
+                        res[0]=1.0
+                    if a[1]>0.5:
+                        #O2 is present
+                        res[1]=1.0
+                    if a[2]>0.5:
+                        #CO2 is present
+                        a[2]=1.0
+                    if a[3]>0.5:
+                        #H2O is present
+                        a[3]=1.0
+                    if res==labels[i]:
+                        validCorrect+=1
+                    validTotal+=1
+                labels=labels.float()
+                valLoss=criterion(outputs,labels)
+    print(f"Epoch {epoch+1}/{n}, Training Loss: {loss.item()}, Validation Loss: {valLoss.item()}, Validation Accuracy: {100 * validCorrect / validTotal}%")
+    losses.append(loss.item())
+
+
+
 
 
 # model=Model().to(device)
@@ -196,6 +270,7 @@ for batch in trainDataloader:
 #                 labels=torch.tensor(newLabels)
 #                 labels=labels.to(device)
 #                 outputs=model(rawData)
+                    
 #                 for i,a in enumerate(outputs):
 #                     if a>0.5:#Water is present
 #                         if labels[i]==1:
