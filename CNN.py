@@ -175,6 +175,7 @@ for epoch in range(n):
                 data=data.to(device)
                 for i,values in enumerate(labels):
                     labels[i]=oneHotEncoding(value)
+                labels=torch.tensor(labels)
                 labels=labels.to(device)
                 outputs=model(data)
                 validCorrect=0
