@@ -23,21 +23,21 @@ def meanFilter(tensor,window_size):
     cumsum=torch.cumsum(tensor, dim=0)
     cumsum[window_size:]=cumsum[window_size:]-cumsum[:-window_size]
     return cumsum[window_size - 1:] / window_size
-def normalize(data,minVal,maxVal):
-    scaledData=(data-data.min())/(data.max()-data.min())
-    scaledData=scaledData*(maxVal-minVal)+minVal
-    return scaledData
+def normalize(tensor):
+    # Scale the tensor to the range [0, 1]
+    normalized_tensor=(tensor - tensor.min()) / (tensor.max() - tensor.min())
+    return normalized_tensor
 def oneHotEncoding(label):
-    res=[0,0,0,0]
+    res=[0.0,0.0,0.0,0.0]
     for value in label.split("-"):
         if value=="N2":
-            res[0]=1
+            res[0]=1.0
         elif value=="O2":
-            res[1]=1
+            res[1]=1.0
         elif value=="CO2":
-            res[2]=1
+            res[2]=1.0
         elif value=="H2O":
-            res[3]=1
+            res[3]=1.0
     return res
 
 class customDataset(Dataset):
@@ -80,11 +80,11 @@ class Model(nn.Module):
     def __init__(self):
         super().__init__()
         #Add proper inputs in brackets. Need to verify shape
-        self.conv1=nn.Conv2d(2,32, kernel_size=(1,3))
+        self.conv1=nn.Conv2d(2,64, kernel_size=(1,3))
         self.pool1=nn.MaxPool2d((1,2),stride=(1,2))
-        self.conv2=nn.Conv2d(32,16,kernel_size=(1,3))
-        self.fc1=nn.Linear(3104,32)#Shape of flattened tensor
-        self.fc2=nn.Linear(32,4)
+        self.conv2=nn.Conv2d(64,32,kernel_size=(1,3))
+        self.fc1=nn.Linear(6208,16)#Shape of flattened tensor
+        self.fc2=nn.Linear(16,4)
         pass
 
     def forward(self,x):
@@ -96,12 +96,11 @@ class Model(nn.Module):
 
         x=self.pool1(F.relu(self.conv2(x)))
         x=x.view(x.size(0),-1)#Need proper size, to determine how to flatten
-
         x=F.relu(self.fc1(x))
         #Might need to apply an activation function to deal with negative values
         output=self.fc2(x)
-        output=torch.sigmoid(output)
-        output=output.view(-1,4)
+        # output=torch.softmax(output,dim=1)
+        # output=output.view(-1,4)
         return output
 
 
@@ -135,14 +134,23 @@ validationLoader=DataLoader(validationDataset,batch_size=32,shuffle=True)
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model=Model().to(device)
-optimizer=optim.Adam(model.parameters(),lr=0.001)#Might need weight decay
-criterion=nn.CrossEntropyLoss()
+optimizer=optim.Adam(model.parameters(),lr=0.00003,weight_decay=0.00001)#Might need weight decay
+scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.00001)
+#Idk, the validation accuracy being very weird.
+criterion=nn.BCEWithLogitsLoss()#Not sure what the best loss function is
 n=15
 losses=[]
 for epoch in range(n):
     for batch in trainDataloader:
         model.train()
         data,labels=batch[0],list(batch[1])
+        # print(data)
+        # print(nn.functional.normalize(data,dim=1))
+        # break
+
+        # data=data.squeeze(2)
+        # print(data.float())
+        # break
         #Convert the labels into 1-hot encoding
         #Each label will be an array that is 4 values long
         #[0,0,0,0]
@@ -152,27 +160,35 @@ for epoch in range(n):
         #The fourth value represents if H2O is present
         for i,value in enumerate(labels):
             labels[i]=oneHotEncoding(value)
-        data=normalize(data,0.0,1.0)#Normalizing
+        data=nn.functional.normalize(data)
         data=data.to(torch.float64)
         data=data.to(device)
 
         labels=torch.tensor(labels)
         labels=labels.to(device)
-        labels=labels.float()
+        # labels=labels.to(torch.float64)
+
 
         #Running the model
         optimizer.zero_grad()
         outputs=model(data)
+        # outputs=torch.sigmoid(outputs)
+        if epoch>1:
+            pass
+            # print(torch.sigmoid(outputs))#Don't apply sigmoid, because loss fucntion already does so
+            # print(labels)
+            # print("")
         loss=criterion(outputs,labels)
         loss.backward()
         optimizer.step()
+    # break
 
     with torch.no_grad():#Validation loop
         for batch in validationLoader:
             model.eval()
             data,labels=batch[0],list(batch[1])
             if list(data.size())[0]==32:#To make sure that it is proper size
-                data=normalize(data,0.0,1.0)
+                data=nn.functional.normalize(data)
                 data=data.to(torch.float64)
                 data=data.to(device)
                 for i,values in enumerate(labels):
@@ -182,25 +198,32 @@ for epoch in range(n):
                 outputs=model(data)
                 validCorrect=0
                 validTotal=0
+                outputs=torch.sigmoid(outputs)#So it can actually aclculate
                 for i,a in enumerate(outputs):
-                    res=[0.0]*4
+                    res=[0]*4
                     if a[0]>0.5:
                         #N2 is present
-                        res[0]=1.0
+                        res[0]=1
                     if a[1]>0.5:
                         #O2 is present
-                        res[1]=1.0
+                        res[1]=1
                     if a[2]>0.5:
                         #CO2 is present
-                        a[2]=1.0
+                        a[2]=1
                     if a[3]>0.5:
                         #H2O is present
-                        a[3]=1.0
-                    if res==labels[i]:
+                        a[3]=1
+                    res=torch.tensor(res)
+                    res=res.to(device)
+                    # print(res)
+                    # print(labels[i])
+                    # print("")
+                    if torch.equal(res,labels[i]):
                         validCorrect+=1
                     validTotal+=1
                 labels=labels.float()
                 valLoss=criterion(outputs,labels)
+    print(validCorrect)
     print(f"Epoch {epoch+1}/{n}, Training Loss: {loss.item()}, Validation Loss: {valLoss.item()}, Validation Accuracy: {100 * validCorrect / validTotal}%")
     losses.append(loss.item())
 
