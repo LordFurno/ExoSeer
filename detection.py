@@ -32,17 +32,18 @@ def findPlanets(period,lc):
     counter=0
     planets={}
     while counter <= 15:
-        bls = getBLSData(period, lc)
+        bls=getBLSData(period, lc)
         
         # Calculate the percentile of bls.power.max() in the entire distribution of bls.power
         medianRank=np.median(bls.power)
         
-        data = extractPlanetData(bls)
+        data=extractPlanetData(bls)
         
         # Assuming you have a significance threshold for detection
         if bls.power.max() > medianRank*2.5:
             transitModel=set(map(lambda x:x.value,list(data[3]["flux"])))
             relativeRad=math.sqrt(max(transitModel)-min(transitModel))
+            #Planet period, PlanetT0, PlanetDuration, relative radius
             planets[counter] = [data[0], data[1], data[2],relativeRad]
             mask = createCadenceMask(bls, planets[counter][0], planets[counter][1], planets[counter][2])
             lc = applyCadenceMask(lc, mask)

@@ -18,7 +18,7 @@ def getWeights(arr,molecIntensity):#Gets the weight for each line based on their
     weights=[(molecIntensity[i]/maxIntensity) for i in arr]#Multiply by 100, because deicmal times deicmal just gets smaller
     return weights
 def calculateWeightedAverage(weight,zScores):
-    weightedSum=sum(zScores[i]*weight[i]*100 for i in range(len(zScores)))
+    weightedSum=sum(zScores[i]*weight[i]*10 for i in range(len(zScores)))
     totalWeight=sum(weight)
     return weightedSum/totalWeight
 
@@ -106,17 +106,18 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
 
 def detectMolecule(molecule,dipLocation):
     moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
-    moleculeData=pd.read_csv(moleculeFilePath,sep="          ",header=None,engine="python")#Sep is how the values are seperated in the data
+    moleculeData=pd.read_csv(moleculeFilePath,header=None,engine="python")#Sep is how the values are seperated in the data
 
-    # print(moleculeData)
+    #print(moleculeData)
     # print(moleculeData.iloc[:,0])
     dipLocation=set(dipLocation)
     molecWavelength=[]
     molecIntensity=[]
     for row in range(len(moleculeData)):
         value=str(moleculeData.iloc[row][0])
-
+        
         value=value.split(' ')
+        value=list(filter(lambda x:x!="",value))
 
         molecWavelength.append(convertCMtoUM(float(value[1])))#Converts to micrometers
         molecIntensity.append(float(value[2]))
@@ -126,30 +127,39 @@ def detectMolecule(molecule,dipLocation):
     standardDeviation=np.std(molecIntensity)
     indexes=[]
     for i,a in enumerate(molecWavelength):
+        print((i,len(molecWavelength)))
         difference=abs(min(dipLocation,key=lambda x:abs(x-a)) - a)
 
         
-        if difference<=0.0001:#Need to find what is qualified as "lines up", it doesn't have to be exactly the same, just very close
+        if difference<=0.001:#Need to find what is qualified as "lines up", it doesn't have to be exactly the same, just very close
             intensityZscore.append(getZScore(intensityMean,molecIntensity[i],standardDeviation))
             indexes.append(i)
             # scores.append(score)
     if len(intensityZscore)>0:
         
         averageZScore=np.mean(intensityZscore)
-        closeness=abs(averageZScore)
+        # print(averageZScore)
 
-        if closeness<=0.001:#Is or above average
+
+        if averageZScore>0 :#Is or above average
+            print(averageZScore)
             normalizedZ=normalize(intensityZscore)#Normalized all z scores
             weights=getWeights(indexes,molecIntensity)#Calculates the weights for the line based on intensity
             weightAverage=calculateWeightedAverage(weights,normalizedZ)#Gets the weighted average with the new weights
-  
+
 
             percentMatch=len(intensityZscore)/len(molecIntensity)*100#Gets what percent of the lines match
             #Maybe don't add them, should look into changing
-            return weightAverage+percentMatch
-            #Likeley that molecule exsists
+            return max(100,weightAverage+percentMatch)
+        else:
+            print(averageZScore)
+            
+
+        #Likeley that molecule exsists
+
+
     else:
-        return 0#No overlay lines, so moolecule doesn't exsist
+        return 0#No overlay lines, so molecule doesn't exsist
 
 
 
@@ -160,7 +170,7 @@ def detectMolecule(molecule,dipLocation):
 # print(detectMolecule("CO2",location))
 # print(numberOfLines)
 
-names={
+names={#
         1:"H2O",
         2:"CO2",
         3:"O3",
