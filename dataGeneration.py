@@ -149,7 +149,7 @@ for combination in moleculeSubsets:#16 iterations
                     parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{"-".join(combination)}-{counter}'+'.txt'
                     createParameterFile(parameters,parameterFile)#Assume that this works
 
-                    curlCommand=f'curl -d key=8bd9208abbd2dd15f3dd -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
+                    curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
                     output=subprocess.check_output(curlCommand,shell=True,text=True)
                     with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
                         dataFile.write(output)
