@@ -8,7 +8,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import regularizers
 from sklearn.model_selection import train_test_split
 
-from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score
 import os
 import pandas as pd
 import numpy as np
@@ -51,6 +51,7 @@ class CustomDataGenerator(Sequence):
             # Combine the channels to create the input data for each sample
             input_data = np.concatenate((wavelength, total), axis=-1)
             batch_data.append(input_data)
+        # print(np.array(batch_))
         return np.array(batch_data), np.array(batch_labels)
 
 combinations=[('N2',), ('O2',), ('CO2',), ('H2O',), ('N2', 'O2'), ('N2', 'CO2'), ('N2', 'H2O'), ('O2', 'CO2'), ('O2', 'H2O'), ('CO2', 'H2O'), ('N2', 'O2', 'CO2'), ('N2', 'O2', 'H2O'), ('N2', 'CO2', 'H2O'), ('O2', 'CO2', 'H2O'), ('N2', 'O2', 'CO2', 'H2O')]
@@ -90,7 +91,7 @@ np.random.seed(42)
 #The third value represents if CO2 is present
 #The fourth value represents if H2O is present
 model = keras.models.Sequential()
-model.add(Conv1D(32, kernel_size=5, strides=2, activation='relu', input_shape=(785, 1),kernel_regularizer=regularizers.l2(0.02)))
+model.add(Conv1D(128, kernel_size=5, strides=2, activation='relu', input_shape=(785, 2),kernel_regularizer=regularizers.l2(0.02)))
 model.add(Conv1D(64, kernel_size=3, strides=2, activation='relu',kernel_regularizer=regularizers.l2(0.02))) 
 model.add(Conv1D(32,kernel_size=2,strides=2,activation='relu',kernel_regularizer=regularizers.l2(0.02)))      
 model.add(Flatten())
@@ -117,5 +118,9 @@ binary_predictions = (val_predictions > 0.5).astype(int)
 # Get true labels from the validation generator
 true_labels = val_generator.labels
 # Calculate F1 score
+precision = precision_score(true_labels, binary_predictions, average='micro')
+recall = recall_score(true_labels, binary_predictions, average='micro')
 f1 = f1_score(true_labels, binary_predictions, average='micro')
 print(f'F1 Score: {f1}')
+print(f'Recall score: {recall}')
+print(f'Precision score: {precision}')

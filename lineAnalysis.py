@@ -15,10 +15,10 @@ def normalize(arr):#Nomralizes a list
     return [i/max(arr) for i in arr]
 def getWeights(arr,molecIntensity):#Gets the weight for each line based on their intensity compared to the rest
     maxIntensity=max(molecIntensity)
-    weights=[(molecIntensity[i]/maxIntensity) for i in arr]#Multiply by 100, because deicmal times deicmal just gets smaller
+    weights=[(molecIntensity[i]/maxIntensity) for i in arr]
     return weights
 def calculateWeightedAverage(weight,zScores):
-    weightedSum=sum(zScores[i]*weight[i]*10 for i in range(len(zScores)))
+    weightedSum=sum(zScores[i]*weight[i]*10 for i in range(len(zScores)))#Multiply by 100, because deicmal times deicmal just gets smaller
     totalWeight=sum(weight)
     return weightedSum/totalWeight
 
