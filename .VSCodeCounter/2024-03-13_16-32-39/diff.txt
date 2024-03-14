@@ -1,0 +1,34 @@
+Date : 2024-03-13 16:32:39
+Directory : c:\Users\Tristan\Downloads\ExoSeer
+Total : 9 files,  -1679 codes, 10 comments, 73 blanks, all -1596 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |          6 |        166 |         10 |         74 |        250 |
+| JSON     |          3 |     -1,845 |          0 |         -1 |     -1,846 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                         | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                            |          9 |     -1,679 |         10 |         73 |     -1,596 |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                     | language | code       | comment    | blank      | total      |
++--------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\Tristan\Downloads\ExoSeer\CNN.py                    | Python   |        -88 |        -17 |        -16 |       -121 |
+| c:\Users\Tristan\Downloads\ExoSeer\CNNEvaluation.py          | Python   |         78 |          6 |         23 |        107 |
+| c:\Users\Tristan\Downloads\ExoSeer\CNNTesting.py             | Python   |        -88 |        -17 |        -16 |       -121 |
+| c:\Users\Tristan\Downloads\ExoSeer\CNNTesting_binAccuracy.py | Python   |        132 |         19 |         41 |        192 |
+| c:\Users\Tristan\Downloads\ExoSeer\CNN_accuracy.py           | Python   |        132 |         19 |         41 |        192 |
+| c:\Users\Tristan\Downloads\ExoSeer\dataGeneration.py         | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\Tristan\Downloads\ExoSeer\graphs.ipynb              | JSON     |        148 |          0 |          1 |        149 |
+| c:\Users\Tristan\Downloads\ExoSeer\math.ipynb                | JSON     |       -888 |          0 |         -1 |       -889 |
+| c:\Users\Tristan\Downloads\ExoSeer\test.ipynb                | JSON     |     -1,105 |          0 |         -1 |     -1,106 |
+| Total                                                        |          |     -1,679 |         10 |         73 |     -1,596 |
++--------------------------------------------------------------+----------+------------+------------+------------+------------+
