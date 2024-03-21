@@ -18,7 +18,7 @@ def getWeights(arr,molecIntensity):#Gets the weight for each line based on their
     weights=[(molecIntensity[i]/maxIntensity) for i in arr]
     return weights
 def calculateWeightedAverage(weight,zScores):
-    weightedSum=sum(zScores[i]*weight[i]*10 for i in range(len(zScores)))#Multiply by 100, because deicmal times deicmal just gets smaller
+    weightedSum=sum(zScores[i]*weight[i]*100 for i in range(len(zScores)))#Multiply by 100, because deicmal times deicmal just gets smaller
     totalWeight=sum(weight)
     return weightedSum/totalWeight
 
@@ -98,7 +98,8 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
     wavelengths=df["CENTRALWAVELNG"]
     transitDepths=df["PL_TRANDEP"]
     derivative=np.gradient(transitDepths,wavelengths)
-    dipIndexes=np.where(derivative<0)[0]
+    # dipIndexes=np.where(derivative<0)[0]
+    dipIndexes=np.where((transitDepths < np.roll(transitDepths, 1)) & (transitDepths < np.roll(transitDepths, -1)))[0]
     dipLocation=[wavelengths[i] for i in dipIndexes]#Gets what wavelength they are at
     dipValue=[transitDepths[i] for i in dipIndexes]#Gets the transit detph at that point
 
@@ -141,16 +142,18 @@ def detectMolecule(molecule,dipLocation):
         # print(averageZScore)
 
 
-        if averageZScore>0 :#Is or above average
-            print(averageZScore)
+        if averageZScore>0 or abs(averageZScore)<0.001:#Is or above average
+            # print(averageZScore)
             normalizedZ=normalize(intensityZscore)#Normalized all z scores
             weights=getWeights(indexes,molecIntensity)#Calculates the weights for the line based on intensity
             weightAverage=calculateWeightedAverage(weights,normalizedZ)#Gets the weighted average with the new weights
 
 
-            percentMatch=len(intensityZscore)/len(molecIntensity)*100#Gets what percent of the lines match
+            percentMatch=len(intensityZscore)/len(molecWavelength)*100#Gets what percent of the lines match
+            print(weightAverage)
+            print(percentMatch)
             #Maybe don't add them, should look into changing
-            return max(100,weightAverage+percentMatch)
+            return min(100,(weightAverage+percentMatch))
         else:
             print(averageZScore)
             
@@ -227,12 +230,20 @@ names={#
         54:	"CH3I",
         55:	"NF3",
     }  
+sg.LOOK_AND_FEEL_TABLE['Exoseer'] = {'BACKGROUND': '#1C1C1C', 
+                                        'TEXT': '#A8D8EA', 
+                                        'INPUT': '#5582A2',
+                                        'TEXT_INPUT': '#FFFFFF', 
+                                        'SCROLL': '#99CC99', 
+                                        'BUTTON': ('#1C1C1C', '#BBD5DE'), 
+                                        'PROGRESS': ('#D1826B', '#CC8019'), 
+                                        'BORDER': 1, 'SLIDER_DEPTH': 0,  
+'PROGRESS_DEPTH': 0, } 
+sg.theme('Exoseer')
 
-sg.theme('DarkAmber')   # Add a touch of color
-# All the stuff inside your window.
 names=list(names.values())
-layout = [[sg.Text("Choose a folder: "), sg.Input(key="-PATH-" ,change_submits=True), sg.FileBrowse(key="-FILE-")],[sg.Button("Submit")],
-         [sg.Text('Molecule to detect: '), sg.Combo(names, font=('Arial Bold', 12),  expand_x=True, enable_events=True,  readonly=True, key='-MOLECULE-')],
+layout = [[sg.Text("Choose a folder: ",font=('Inter Bold', 12)), sg.Input(key="-PATH-" ,change_submits=True), sg.FileBrowse(key="-FILE-")],[sg.Button("Submit")],
+         [sg.Text('Molecule to detect: ',font=('Inter Bold', 12)), sg.Combo(names, font=('Inter Bold', 12),  expand_x=True, enable_events=True,  readonly=True, key='-MOLECULE-')],
          [sg.Button("Calculate")],
          [sg.Text("",key="-STATUS-")]
          
@@ -241,8 +252,8 @@ layout = [[sg.Text("Choose a folder: "), sg.Input(key="-PATH-" ,change_submits=T
 filePath=None
 window = sg.Window('Window Title', layout,size=(700,300))
 while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
+    event, values=window.read()
+    if event==sg.WIN_CLOSED or event=='Cancel': #if user closes window or clicks cancel
         break
     if event=="Submit":
         filePath=values["-PATH-"]

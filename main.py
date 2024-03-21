@@ -15,7 +15,7 @@ def isValid(value,valueType):#Check if a value is valid or not
             return False
         if value.isnumeric()==True and int(value)>1000:
             return False
-        if value.isnumeric()==True and int(value)<=1:
+        if value.isnumeric()==True and int(value)<1:
             return False
 
     return True    
@@ -23,27 +23,36 @@ def clearErrors():
     window["-keplerMissionStatus-"].update("")
     window["-periodStatus-"].update("")
     window["-cadenceStatus-"].update("")
+sg.LOOK_AND_FEEL_TABLE['Exoseer'] = {'BACKGROUND': '#1C1C1C', 
+                                        'TEXT': '#A8D8EA', 
+                                        'INPUT': '#5582A2',
+                                        'TEXT_INPUT': '#FFFFFF', 
+                                        'SCROLL': '#99CC99', 
+                                        'BUTTON': ('#1C1C1C', '#BBD5DE'), 
+                                        'PROGRESS': ('#D1826B', '#CC8019'), 
+                                        'BORDER': 1, 'SLIDER_DEPTH': 0,  
+'PROGRESS_DEPTH': 0, } 
 
-sg.theme('DarkAmber')   # Add a touch of color
+sg.theme('Exoseer')   # Add a touch of color
 # All the stuff inside your window.
 text="No error"
 names=["long","short","fast"]
-layout = [  [sg.Text("Kepler mission number:"), sg.InputText()],
-            [sg.Text('Cadence time: '), sg.Combo(names, font=('Arial Bold', 12),  expand_x=True, enable_events=True,  readonly=True, key='-COMBO-')],
-            [sg.Text('Period search: '),sg.InputText()],
+layout = [  [sg.Text("Kepler mission number:",font=('Inter', 12)), sg.InputText()],
+            [sg.Text('Cadence time: ',font=('Inter', 12)), sg.Combo(names, font=('Inter Bold', 12),  expand_x=True, enable_events=True,  readonly=True, key='-COMBO-')],
+            [sg.Text('Period search: ',font=('Inter', 12)),sg.InputText()],
             [sg.Button('Display light curve')],
             [sg.Button('Display BLS graph')],
             [sg.Button('Get planetary data')],
-            [sg.Text("",font=('Arial Bold',15),key="-keplerMissionStatus-")],
-            [sg.Text("",font=('Arial Bold',15),key="-periodStatus-")],
-            [sg.Text("",font=('Arial Bold',10),key="-cadenceStatus-")]]
+            [sg.Text("",font=('Inter Bold', 15),key="-keplerMissionStatus-")],
+            [sg.Text("",font=('Inter Bold', 15),key="-periodStatus-")],
+            [sg.Text("",font=('Inter Bold', 10),key="-cadenceStatus-")]]
 
 
 
 # Create the Window
 lc=None
 bls=None
-planets={}#Planet: [period,t0,duration]
+planets={}#Planet: [period,t0,duration,relative radius]
 window = sg.Window('Window Title', layout,size=(550,300))
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
@@ -97,6 +106,7 @@ while True:
         if event=="Get planetary data" and isValid(keplerMission,"keplerMission") and isValid(searchPeriod,"period"):
             clearErrors()
             period=np.linspace(1,int(searchPeriod),10000)
+            print(len(period))
             if lc is not None and type(lc)!=str:
                 print("Calculating planets")
                 planets=detection.findPlanets(period,lc)
@@ -110,6 +120,8 @@ while True:
                 else:
                     print("Calculating planets")
                     planets=detection.findPlanets(period,lc)
+                    planets=list(planets.items())
+                    planets.sort(key=lambda x:x[1][4],reverse=True)
                     print(f"Planets: {planets}")
 
         #Need a text bos for errors (maybe status bar)

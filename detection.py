@@ -1,6 +1,7 @@
 import lightkurve as lk
 import numpy as np
 import math
+import matplotlib.pyplot as plt 
 def getLightcurveData(observation,cadence):
     search_result=lk.search_lightcurve(observation,author="Kepler",exptime=cadence)
 
@@ -10,7 +11,9 @@ def getLightcurveData(observation,cadence):
     #.stitch removes the offset between the different observations
     #.flatten() applies the Savitzky-Golay filter
     #.remove_outliers() 
-    lc=lc_collection.stitch().flatten(window_length=901).remove_outliers()
+    # lc_collection.plot();
+    # plt.show(block=True)
+    lc = lc_collection.stitch().flatten().remove_outliers()
     return lc
 
 def getBLSData(periodSearch,lightcurve):
@@ -41,10 +44,20 @@ def findPlanets(period,lc):
         
         # Assuming you have a significance threshold for detection
         if bls.power.max() > medianRank*2.5:
-            transitModel=set(map(lambda x:x.value,list(data[3]["flux"])))
+            planetModel=data[3]
+            transitModel=set(map(lambda x:x.value,list(planetModel["flux"])))
             relativeRad=math.sqrt(max(transitModel)-min(transitModel))
-            #Planet period, PlanetT0, PlanetDuration, relative radius
-            planets[counter] = [data[0], data[1], data[2],relativeRad]
+
+            planetPeriod=data[0]
+
+            planetT0=data[1]
+
+            planetDuration=data[2]
+
+
+
+            #Planet period, PlanetT0, PlanetDuration, relative radius, bls power
+            planets[counter] = [planetPeriod, planetT0,planetDuration,relativeRad,bls.power.max().value]
             mask = createCadenceMask(bls, planets[counter][0], planets[counter][1], planets[counter][2])
             lc = applyCadenceMask(lc, mask)
         else:
