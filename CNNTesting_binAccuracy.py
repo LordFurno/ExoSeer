@@ -57,7 +57,7 @@ class CustomDataGenerator(Sequence):
 
 combinations=[('N2',), ('O2',), ('CO2',), ('H2O',), ('N2', 'O2'), ('N2', 'CO2'), ('N2', 'H2O'), ('O2', 'CO2'), ('O2', 'H2O'), ('CO2', 'H2O'), ('N2', 'O2', 'CO2'), ('N2', 'O2', 'H2O'), ('N2', 'CO2', 'H2O'), ('O2', 'CO2', 'H2O'), ('N2', 'O2', 'CO2', 'H2O')]
 folderDirectories=[]
-folderPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
+folderPath=r'C:\Users\User\Downloads\ExoSeer\Data\Training'
 for combination in combinations:
     newPath=folderPath+f'\{"-".join(combination)}'
     folderDirectories.append(("-".join(combination),newPath))
