@@ -83,10 +83,10 @@ def getMoleculeData():
     for molecID in range(1,56):
         try:#If wavelengths doesn't fit
             hapi.fetch(names[molecID],molecID,1,1500,5000)#Just use the first isotopolouge, the most most abundant
-            curFilePath=r"C:\Users\Tristan\Downloads\ExoSeer" +f"\{names[molecID]}.data"
-            newFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{names[molecID]}.data"
+            curFilePath=r"C:\Users\User\Downloads\ExoSeer" +f"\{names[molecID]}.data"
+            newFilePath=r"C:\Users\User\Downloads\ExoSeer\Data\LineData"+f"\{names[molecID]}.data"
 
-            headerFilePath=r"C:\Users\Tristan\Downloads\ExoSeer" +f"\{names[molecID]}.header"
+            headerFilePath=r"C:\Users\User\Downloads\ExoSeer" +f"\{names[molecID]}.header"
             os.rename(curFilePath,newFilePath)
             os.remove(headerFilePath)
         except:
@@ -106,7 +106,7 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
     return (dipLocation,dipValue)
 
 def detectMolecule(molecule,dipLocation):
-    moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
+    moleculeFilePath=r"C:\Users\User\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
     moleculeData=pd.read_csv(moleculeFilePath,header=None,engine="python")#Sep is how the values are seperated in the data
 
     #print(moleculeData)
@@ -168,7 +168,7 @@ def detectMolecule(molecule,dipLocation):
 
 
 
-# location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
+# location,values=dipFinder(r"C:\Users\User\Downloads\ExoSeer\ExoplanetDataTest.csv")
 # print("dips found")
 # print(detectMolecule("CO2",location))
 # print(numberOfLines)
