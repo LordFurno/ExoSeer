@@ -142,7 +142,7 @@ def detectMolecule(molecule,dipLocation):
         # print(averageZScore)
 
 
-        if averageZScore>0 or abs(averageZScore)<0.001:#Is or above average
+        if averageZScore>=0 or abs(averageZScore)<0.001:#Is or above average
             # print(averageZScore)
             normalizedZ=normalize(intensityZscore)#Normalized all z scores
             weights=getWeights(indexes,molecIntensity)#Calculates the weights for the line based on intensity
