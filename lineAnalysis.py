@@ -3,6 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import PySimpleGUI as sg
+import scipy.stats as stats
+
 def convertCMtoUM(cm):#Convrets cm^-1 to microns
    return 10000/cm 
 def calculatePercentDiff(val1,val2):
@@ -83,17 +85,16 @@ def getMoleculeData():
     for molecID in range(1,56):
         try:#If wavelengths doesn't fit
             hapi.fetch(names[molecID],molecID,1,1500,5000)#Just use the first isotopolouge, the most most abundant
-            curFilePath=r"C:\Users\User\Downloads\ExoSeer" +f"\{names[molecID]}.data"
-            newFilePath=r"C:\Users\User\Downloads\ExoSeer\Data\LineData"+f"\{names[molecID]}.data"
+            curFilePath=r"C:\Users\Tristan\Downloads\ExoSeer" +f"\{names[molecID]}.data"
+            newFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{names[molecID]}.data"
 
-            headerFilePath=r"C:\Users\User\Downloads\ExoSeer" +f"\{names[molecID]}.header"
+            curHeader=r"C:\Users\Tristan\Downloads\ExoSeer" +f"\{names[molecID]}.header"
+            newHeader=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData" +f"\{names[molecID]}.header"
             os.rename(curFilePath,newFilePath)
-            os.remove(headerFilePath)
+            os.rename(curHeader,newHeader)
         except:
             pass
 def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just the name of the molecule to find dips.
-
-
     df=pd.read_csv(filePath)
     wavelengths=df["CENTRALWAVELNG"]
     transitDepths=df["PL_TRANDEP"]
@@ -105,15 +106,54 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
 
     return (dipLocation,dipValue)
 
-def detectMolecule(molecule,dipLocation):
-    moleculeFilePath=r"C:\Users\User\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
+
+
+
+def detectMolecule(molecule,dipLocation,dipValue):
+
+
+    #HITRAN molecule id's
+    ids={'H2O': 1, 'CO2': 2, 'O3': 3, 'N2O': 4, 'CO': 5, 'CH4': 6, 'O2': 7, 'NO': 8, 'SO2': 9, 'NO2': 10, 'NH3': 11, 'HNO3': 12, 'OH': 13, 'HF': 14, 'HCl': 15, 'HBr': 16, 'HI': 17, 'ClO': 18, 'OCS': 19, 'H2CO': 20, 'HOCl': 21, 'N2': 22, 'HCN': 23, 'CH3Cl': 24, 'H2O2': 25, 'C2H2': 26, 'C2H6': 27, 'PH3': 28, 'COF2': 29, 'SF6': 30, 'H2S': 31, 'HCOOH': 32, 'HO2': 33, 'O': 34, 'ClONO2': 35, 'NO+': 36, 'HOBr': 37, 'C2H4': 38, 'CH3OH': 39, 'CH3Br': 40, 'CH3CN': 41, 'CF4': 42, 'C4H3': 43, 'HC3N': 44, 'H2': 45, 'CS': 46, 'SO3': 47, 'C2N2': 48, 'COC12': 49, 'SO': 50, 'CH3F': 51, 'GeH4': 52, 'CS2': 53, 'CH3I': 54, 'NF3': 55}
+    test=hapi.fetch(molecule,ids[molecule],1,1500,5000)
+    nu,coef = hapi.absorptionCoefficient_Lorentz(SourceTables=molecule,HITRAN_units=False)
+    nu,trans = hapi.transmittanceSpectrum(nu,coef)
+    wavelengths=[]
+
+    for value in nu:
+        wavelengths.append(convertCMtoUM(value))
+
+    os.remove(r"C:\Users\Tristan\Downloads\ExoSeer"+f"\{molecule}.data")
+    os.remove(r"C:\Users\Tristan\Downloads\ExoSeer"+f"\{molecule}.header")
+    observedWavelength=[]
+    observedTransit=[]
+
+    expectedWavelength=[]
+    expectedTransit=[]
+
+
+    for i,value in enumerate(dipValue):#Converting into transmittance
+        dipValue[i]=1-(value/100)
+
+    for index,value in enumerate(dipLocation):#Finds matching dips and lines, wavelengths must be close and transmittance must be close
+        closestMatchingValue=min(wavelengths,key=lambda x:abs(x-value))
+        # print(closestMatchingValue-value)
+        wavelengthIndex=wavelengths.index(closestMatchingValue)
+
+        if abs(closestMatchingValue-value)<=0.001:
+            observedWavelength.append(value)
+            observedTransit.append(dipValue[index])
+
+            expectedWavelength.append(closestMatchingValue)
+            expectedTransit.append(trans[wavelengthIndex])
+
+    moleculeFilePath=r"C:\Users\Tristan\Downloads\ExoSeer\Data\LineData"+f"\{molecule}.data"
     moleculeData=pd.read_csv(moleculeFilePath,header=None,engine="python")#Sep is how the values are seperated in the data
 
-    #print(moleculeData)
-    # print(moleculeData.iloc[:,0])
+    print("Observed and expected calculated")
     dipLocation=set(dipLocation)
     molecWavelength=[]
     molecIntensity=[]
+    intensityZscore=[]#This will be used to calculate threshold to perform bayesian inference or not
     for row in range(len(moleculeData)):
         value=str(moleculeData.iloc[row][0])
         
@@ -122,53 +162,55 @@ def detectMolecule(molecule,dipLocation):
 
         molecWavelength.append(convertCMtoUM(float(value[1])))#Converts to micrometers
         molecIntensity.append(float(value[2]))
-
     intensityMean=np.mean(molecIntensity)
-    intensityZscore=[]
     standardDeviation=np.std(molecIntensity)
-    indexes=[]
     for i,a in enumerate(molecWavelength):
-        print((i,len(molecWavelength)))
         difference=abs(min(dipLocation,key=lambda x:abs(x-a)) - a)
-
-        
         if difference<=0.001:#Need to find what is qualified as "lines up", it doesn't have to be exactly the same, just very close
             intensityZscore.append(getZScore(intensityMean,molecIntensity[i],standardDeviation))
-            indexes.append(i)
-            # scores.append(score)
-    if len(intensityZscore)>0:
-        
-        averageZScore=np.mean(intensityZscore)
-        # print(averageZScore)
 
+    if len(intensityZscore)>0:
+        averageZScore=np.mean(intensityZscore)
 
         if averageZScore>=0 or abs(averageZScore)<0.001:#Is or above average
-            # print(averageZScore)
-            normalizedZ=normalize(intensityZscore)#Normalized all z scores
-            weights=getWeights(indexes,molecIntensity)#Calculates the weights for the line based on intensity
-            weightAverage=calculateWeightedAverage(weights,normalizedZ)#Gets the weighted average with the new weights
+            differences=np.array(expectedTransit)-np.array(observedTransit)#Differences
+            
+            muPrior=3 #Prior mean for the deviations (assuming no bias in deviation)
+            sigmaPrior=1  #Prior standard deviation for the mean (can be adjusted)
+            alphaPrior=1  #Prior shape parameter for the gamma distribution (precision)
+            betaPrior=1   #Prior rate parameter for the gamma distribution (precision)
 
+            differenceMean=np.mean(differences)
+            differenceVariance=np.var(differences)
 
-            percentMatch=len(intensityZscore)/len(molecWavelength)*100#Gets what percent of the lines match
-            print(weightAverage)
-            print(percentMatch)
-            #Maybe don't add them, should look into changing
-            return min(100,(weightAverage+percentMatch))
+            n=len(differences)
+
+            sigmaPrior2=sigmaPrior**2#Prior variance
+            sigmaPost2 = 1 / (n / differenceVariance + 1 / sigmaPrior2)#Posterior variance
+            mu_post = sigmaPost2 * (differenceMean / differenceVariance + muPrior / sigmaPrior2)#Posterior mean
+
+            alphaPost = alphaPrior+n / 2#Posterior shape
+            betaPost = betaPrior + 0.5 * np.sum((differences - differenceMean) ** 2)#Posterior rate
+
+            posteriorMu = stats.norm(loc=mu_post, scale=np.sqrt(sigmaPost2))#Creates normal (gaussian) distrbution representing posterior distrbution of mean differnces
+            PosteriorTau = stats.gamma(a=alphaPost, scale=1 / betaPost)#Creates a gamma distribution representing the posterior distribution of the precision
+
+            threshold = 0  # Adjust the threshold according to context
+            prob_present = posteriorMu.sf(threshold)  # Survival function (1 - CDF) of the posterior mu
+
+            print(f"Probability that molecule is present: {prob_present*100}")
+
+            return prob_present*100
+            #Perform inference
         else:
             print(averageZScore)
-            
-
-        #Likeley that molecule exsists
-
-
     else:
-        return 0#No overlay lines, so molecule doesn't exsist
+        print("No overlay lines with dips. Molecule isn't present")
 
 
 
 
-
-# location,values=dipFinder(r"C:\Users\User\Downloads\ExoSeer\ExoplanetDataTest.csv")
+# location,values=dipFinder(r"C:\Users\Tristan\Downloads\ExoSeer\ExoplanetDataTest.csv")
 # print("dips found")
 # print(detectMolecule("CO2",location))
 # print(numberOfLines)
@@ -265,8 +307,8 @@ while True:
     if event=="Calculate":
         if filePath!=None and values["-MOLECULE-"]!="":
             molecule=values["-MOLECULE-"]
-            probability=detectMolecule(molecule,dipLocation)
-            print(f"The probability that {molecule} exsists in the atmosphere of this planet is: {probability}")
+            probability=detectMolecule(molecule,dipLocation,dipValue)
+            print(f"The probability that {molecule} exsists in the atmosphere of this planet is: {probability}%")
 
             
         
