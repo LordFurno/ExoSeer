@@ -20,7 +20,7 @@ def calculateGravity(radius,density):#Radius is in km and density is in g/cm^3
     gravity= (gravConstant*mass)/(radius**2) / 1000000#To get it into right units
     return gravity
 def createParameterFile(parameters,filePath):
-    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
+    with open(r'C:\Users\User\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
         # Read the contents of the original file
         template = original_file.read()
 
@@ -56,7 +56,7 @@ def writeToCSV(data,outputFilePath,extraMolecules):#Converts numerical data into
         for row in data:
             writer.writerow(row)
 def createParameterFileTesting(parameters,filePath):
-    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
+    with open(r'C:\Users\User\Downloads\ExoSeer\Data\template.txt', 'r') as original_file:
         # Read the contents of the original file
         template = original_file.read()
     diff=['<ATMOSPHERE-NGAS>','<ATMOSPHERE-GAS>','<ATMOSPHERE-ABUN>','<ATMOSPHERE-UNIT>','<ATMOSPHERE-TYPE>']
@@ -105,7 +105,7 @@ starDistances=[i for i in range(10,50,10)]#The range for the star distances
 
 HITRANValues={"N2":"HIT[22]","O2":"HIT[7]","CO2":"HIT[2]","H2O":"HIT[1]"}#For the parameter atmosphere-type
 
-trainingFilePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
+trainingFilePath=r'C:\Users\User\Downloads\ExoSeer\Data\Training'
 
 #Just create folders for each molecule, svm will be one vs all, this will still let it allow to classify multiple molecules.
 moleculeSubsets=getSubsets(molecules.keys())
@@ -116,7 +116,7 @@ moleculeSubsets=getSubsets(molecules.keys())
 
 #Consider changnign molecule abundance to percentage and change it to 100%, this makes it so the data isn't a straight line.
 for combination in moleculeSubsets:#16 iterations
-    folderPath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training'
+    folderPath=r'C:\Users\User\Downloads\ExoSeer\Data\Training'
     #How should I name the folder?
     folderPath+=f'\{"-".join(combination)}'
     os.makedirs(folderPath)
@@ -145,15 +145,15 @@ for combination in moleculeSubsets:#16 iterations
                     parameters['<ATMOSPHERE-TYPE>']=",".join(hitranNames)
 
 
-                    parameterFolder=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters'
-                    parameterFile=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Parameters' + f'\{"-".join(combination)}-{counter}'+'.txt'
+                    parameterFolder=r'C:\Users\User\Downloads\ExoSeer\Data\Parameters'
+                    parameterFile=r'C:\Users\User\Downloads\ExoSeer\Data\Parameters' + f'\{"-".join(combination)}-{counter}'+'.txt'
                     createParameterFile(parameters,parameterFile)#Assume that this works
 
                     curlCommand=f'curl -d key=API_KEY -d type=trn -d whdr=y --data-urlencode file@"{parameterFile}" https://psg.gsfc.nasa.gov/api.php'
                     output=subprocess.check_output(curlCommand,shell=True,text=True)
-                    with open(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
+                    with open(r'C:\Users\User\Downloads\ExoSeer\Data\temp.txt','w') as dataFile:
                         dataFile.write(output)
-                        extracted=getNumericalData(r'C:\Users\Tristan\Downloads\ExoSeer\Data\temp.txt')
+                        extracted=getNumericalData(r'C:\Users\User\Downloads\ExoSeer\Data\temp.txt')
                         writeToCSV(extracted,folderPath+f'\{"-".join(combination)}-{counter}'+'.csv',[])
                         dataFile.close()
                     
