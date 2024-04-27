@@ -127,18 +127,18 @@ test_labels,test_samples=np.array(test_labels),np.array(test_samples)
 # print(all_samples)
 # print(test_samples)
 # print(test_labels)
-test_generator = CustomDataGenerator(test_samples, test_labels, batch_size=32)
+test_generator=CustomDataGenerator(test_samples, test_labels, batch_size=32)
 model=tf.keras.models.load_model(r'C:\Users\Tristan\Downloads\ExoSeer\CNN.keras')
-val_predictions = model.predict(test_generator)
-true_labels = test_generator.labels
+val_predictions=model.predict(test_generator)
+true_labels=test_generator.labels
 
-num_labels = test_labels.shape[1]
+num_labels=test_labels.shape[1]
 names=["N2","O2","CO2","H2O"]
 # Calculate AUC-ROC for each label
 auc_roc_scores = []
 for label_idx in range(num_labels):
-    fpr, tpr, _=roc_curve(test_labels[:, label_idx], val_predictions[:, label_idx])#False positive, true positive rate 
-    auc_score = roc_auc_score(test_labels[:, label_idx], val_predictions[:, label_idx])
+    fpr,tpr,_=roc_curve(test_labels[:, label_idx], val_predictions[:, label_idx])#False positive, true positive rate 
+    auc_score=roc_auc_score(test_labels[:, label_idx], val_predictions[:, label_idx])
     auc_roc_scores.append(auc_score)
     
     # Plot the ROC curve for each label
@@ -154,23 +154,8 @@ plt.xticks(fontsize=15)
 plt.yticks(fontsize=15)
 plt.show(block=True)
 
+
 # Calculate the average AUC-ROC score
 average_auc_roc = np.mean(auc_roc_scores)
 
 print(f'Average AUC-ROC: {average_auc_roc:.2f}')
-#Making sure data is different
-# import random
-# import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-# combinations=[('N2',), ('O2',), ('CO2',), ('H2O',), ('N2', 'O2'), ('N2', 'CO2'), ('N2', 'H2O'), ('O2', 'CO2'), ('O2', 'H2O'), ('CO2', 'H2O'), ('N2', 'O2', 'CO2'), ('N2', 'O2', 'H2O'), ('N2', 'CO2', 'H2O'), ('O2', 'CO2', 'H2O'), ('N2', 'O2', 'CO2', 'H2O')]
-# test=[]
-# for i in range(10):
-#     index=random.randint(1,4080)
-#     #C:\Users\Tristan\Downloads\ExoSeer\Data\Training\CO2\CO2-1.csv
-#     filePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\H2O' + f'\H2O-{index}.csv'
-#     data=pd.read_csv(filePath)
-#     wavelength=np.array(data.iloc[:, 0])
-#     total=np.array(data.iloc[:, 1])
-#     plt.plot(wavelength,total)
-#     plt.show(block=True)

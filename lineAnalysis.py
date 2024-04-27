@@ -107,34 +107,14 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
 
     return (dipLocation,dipValue)
 
-
+def z_score_standardization(data):
+    mean = np.mean(data)
+    std_dev = np.std(data)
+    standardized_data = (data - mean) / std_dev
+    return standardized_data
 
 
 def detectMolecule(molecule,dipLocation,dipValue):
-
-    def likelihood(obs, exp, moleculePresent=True):
-        differences = np.abs(np.array(exp) - np.array(obs))
-        likelihoods = []
-        for value in differences:
-            # Define a weighting function based on the magnitude of differences
-            weight = 1/(1 + value)  # Example weighting function
-            if moleculePresent:
-                likelihoods.append(weight*1.001)  # Adjust likelihood based on weight
-            else:
-                likelihoods.append(weight*0.94)  # Adjust likelihood based on weight
-        return np.prod(likelihoods)
-    
-    def prior(p):#Prior probability
-        return bernoulli.pmf(p, 0.01)#Bernoulli distrbution, 5% chance that molecule is present, 95% chance that it is absent.
-
-    def calculatePosterior(obs,exp,moleculePresent=True):#calculating posterior
-        #Calculate likelihood
-        likelihood_value=likelihood(obs, exp, moleculePresent=moleculePresent)
-        #Calculate prior probability
-        prior_prob=prior(1 if moleculePresent else 0)
-        # Compute posterior probability using Bayes' theorem
-        posterior_prob = (likelihood_value * prior_prob) / (likelihood(obs, exp, moleculePresent=True) * prior(1) + likelihood(obs, exp, moleculePresent=False) * prior(0))
-        return posterior_prob
 
     #HITRAN molecule id's
     ids={'H2O': 1, 'CO2': 2, 'O3': 3, 'N2O': 4, 'CO': 5, 'CH4': 6, 'O2': 7, 'NO': 8, 'SO2': 9, 'NO2': 10, 'NH3': 11, 'HNO3': 12, 'OH': 13, 'HF': 14, 'HCl': 15, 'HBr': 16, 'HI': 17, 'ClO': 18, 'OCS': 19, 'H2CO': 20, 'HOCl': 21, 'N2': 22, 'HCN': 23, 'CH3Cl': 24, 'H2O2': 25, 'C2H2': 26, 'C2H6': 27, 'PH3': 28, 'COF2': 29, 'SF6': 30, 'H2S': 31, 'HCOOH': 32, 'HO2': 33, 'O': 34, 'ClONO2': 35, 'NO+': 36, 'HOBr': 37, 'C2H4': 38, 'CH3OH': 39, 'CH3Br': 40, 'CH3CN': 41, 'CF4': 42, 'C4H3': 43, 'HC3N': 44, 'H2': 45, 'CS': 46, 'SO3': 47, 'C2N2': 48, 'COC12': 49, 'SO': 50, 'CH3F': 51, 'GeH4': 52, 'CS2': 53, 'CH3I': 54, 'NF3': 55}
@@ -198,11 +178,11 @@ def detectMolecule(molecule,dipLocation,dipValue):
 
         if averageZScore>=0 or abs(averageZScore)<0.001:#Is or above average
             differences=np.array(expectedTransit)-np.array(observedTransit)#Differences
-            
-            muPrior=3 #Prior mean for the deviations (assuming no bias in deviation)
-            sigmaPrior=1  #Prior standard deviation for the mean (can be adjusted)
-            alphaPrior=1  #Prior shape parameter for the gamma distribution (precision)
-            betaPrior=1   #Prior rate parameter for the gamma distribution (precision)
+            # differences=z_score_standardization(differences)
+            muPrior=0 #Prior mean for the deviations (assuming no bias in deviation)
+            sigmaPrior=0.1 #Prior standard deviation for the mean (can be adjusted)
+            alphaPrior=3  #Prior shape parameter for the gamma distribution (precision)
+            betaPrior=5  #Prior rate parameter for the gamma distribution (precision)
 
             differenceMean=np.mean(differences)
             differenceVariance=np.var(differences)
@@ -220,10 +200,28 @@ def detectMolecule(molecule,dipLocation,dipValue):
             PosteriorTau = stats.gamma(a=alphaPost, scale=1 / betaPost)#Creates a gamma distribution representing the posterior distribution of the precision
 
             threshold = 0  # Adjust the threshold according to context
-            prob_present = posteriorMu.sf(threshold)  # Survival function (1 - CDF) of the posterior mu
+            prob_present = posteriorMu.cdf(threshold)  # Survival function (1 - CDF) of the posterior mu
 
             print(f"Probability that molecule is present: {prob_present*100}")
+            posterior_sd=np.sqrt(sigmaPost2)
+            #Specify the desired confidence level (e.g., 95%)
+            confidence_level=0.95
 
+            # Calculate the critical values for the desired confidence level using the normal distribution
+            alpha=1 - confidence_level
+            z=stats.norm.ppf(1 - alpha / 2)#Z-score for two-tailed test
+
+            #Calculate the lower and upper bounds of the credibility interval
+            lower_bound=mu_post - z * posterior_sd
+            upper_bound=mu_post + z * posterior_sd
+            interval_width = upper_bound - lower_bound
+            # Assuming a range for normalization (e.g., maximum range in the data)
+            max_interval_width = 0.5  # Define the maximum acceptable interval width, based on your context
+            confidence_score = max(0, (1 - interval_width / max_interval_width)) * 100
+            
+            # Print the 95% credibility interval
+            print(f"95% credibility interval for the posterior mean: ({lower_bound:.4f}, {upper_bound:.4f})")
+            print(f'Confidence score of {confidence_score}%')
             return prob_present*100
             #Perform inference
         else:

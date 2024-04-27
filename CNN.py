@@ -3,12 +3,10 @@ import tensorflow as tf
 tf.compat.v1.executing_eagerly_outside_functions()
 import keras
 from keras.utils import Sequence
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout,BatchNormalization
-from tensorflow.keras.optimizers import Adam
+
 from tensorflow.keras import regularizers
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import AdaBoostClassifier
+
 from sklearn.metrics import precision_score, recall_score, f1_score,multilabel_confusion_matrix, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
@@ -162,7 +160,7 @@ for train_index, val_index in cv.split(all_samples, np.argmax(all_labels, axis=1
     model.add(BatchNormalization())
     model.add(MaxPooling1D(2))
 
-    model.add(Conv1D(128, kernel_size=5, strides=2, activation='relu', input_shape=(785, 2),kernel_regularizer=regularizers.l2(0.05)))
+    model.add(Conv1D(128, kernel_size=5, strides=2, activation='relu', kernel_regularizer=regularizers.l2(0.05)))
     model.add(BatchNormalization())
     model.add(MaxPooling1D(2))
 
