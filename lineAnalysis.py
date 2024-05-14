@@ -3,9 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 import PySimpleGUI as sg
-from scipy.stats import bernoulli
-import scipy.stats as stats
 
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+import seaborn as sns
 def convertCMtoUM(cm):#Convrets cm^-1 to microns
    return 10000/cm 
 def calculatePercentDiff(val1,val2):
@@ -99,8 +100,6 @@ def dipFinder(filePath):#filePath is the exoplanet csv file. MOlecule is just th
     df=pd.read_csv(filePath)
     wavelengths=df["CENTRALWAVELNG"]
     transitDepths=df["PL_TRANDEP"]
-    derivative=np.gradient(transitDepths,wavelengths)
-    # dipIndexes=np.where(derivative<0)[0]
     dipIndexes=np.where((transitDepths < np.roll(transitDepths, 1)) & (transitDepths < np.roll(transitDepths, -1)))[0]
     dipLocation=[wavelengths[i] for i in dipIndexes]#Gets what wavelength they are at
     dipValue=[transitDepths[i] for i in dipIndexes]#Gets the transit detph at that point
@@ -179,10 +178,10 @@ def detectMolecule(molecule,dipLocation,dipValue):
         if averageZScore>=0 or abs(averageZScore)<0.001:#Is or above average
             differences=np.array(expectedTransit)-np.array(observedTransit)#Differences
             # differences=z_score_standardization(differences)
-            muPrior=0 #Prior mean for the deviations (assuming no bias in deviation)
-            sigmaPrior=0.1 #Prior standard deviation for the mean (can be adjusted)
-            alphaPrior=3  #Prior shape parameter for the gamma distribution (precision)
-            betaPrior=5  #Prior rate parameter for the gamma distribution (precision)
+            muPrior=0 #Prior mean for the deviations (assuming no bias in deviation), Expected mean
+            sigmaPrior=0.1 #Prior standard deviation for the mean (can be adjusted), Exepected uncertainty
+            alphaPrior=3  #Prior shape parameter for the gamma distribution (precision), Prior belief
+            betaPrior=5  #Prior rate parameter for the gamma distribution (precision), Prior belief
 
             differenceMean=np.mean(differences)
             differenceVariance=np.var(differences)
@@ -192,15 +191,15 @@ def detectMolecule(molecule,dipLocation,dipValue):
             sigmaPrior2=sigmaPrior**2#Prior variance
             sigmaPost2 = 1 / (n / differenceVariance + 1 / sigmaPrior2)#Posterior variance
             mu_post = sigmaPost2 * (differenceMean / differenceVariance + muPrior / sigmaPrior2)#Posterior mean
-
-            alphaPost = alphaPrior+n / 2#Posterior shape
+            print(mu_post)
+            alphaPost = alphaPrior+n/2#Posterior shape
             betaPost = betaPrior + 0.5 * np.sum((differences - differenceMean) ** 2)#Posterior rate
 
             posteriorMu = stats.norm(loc=mu_post, scale=np.sqrt(sigmaPost2))#Creates normal (gaussian) distrbution representing posterior distrbution of mean differnces
             PosteriorTau = stats.gamma(a=alphaPost, scale=1 / betaPost)#Creates a gamma distribution representing the posterior distribution of the precision
 
-            threshold = 0  # Adjust the threshold according to context
-            prob_present = posteriorMu.cdf(threshold)  # Survival function (1 - CDF) of the posterior mu
+            threshold=0#Kind of a strict threshold, thats why probabilities are kind of low
+            prob_present=posteriorMu.cdf(threshold)  # Survival function (1 - CDF) of the posterior mu
 
             print(f"Probability that molecule is present: {prob_present*100}")
             posterior_sd=np.sqrt(sigmaPost2)
@@ -218,10 +217,23 @@ def detectMolecule(molecule,dipLocation,dipValue):
             # Assuming a range for normalization (e.g., maximum range in the data)
             max_interval_width = 0.5  # Define the maximum acceptable interval width, based on your context
             confidence_score = max(0, (1 - interval_width / max_interval_width)) * 100
+            print(f"Confidence score for molecule probability: {confidence_score}")
+            x = np.linspace(mu_post - 4 * posterior_sd, mu_post + 4 * posterior_sd, 1000)
+            y = posteriorMu.pdf(x)
+
+            plt.figure()
+            plt.xticks(fontsize=15)
+            plt.yticks(fontsize=15)
+            plt.rcParams.update({'font.size': 15})
+            plt.plot(x, y, label='Posterior Mean Distribution')
+            plt.title('Posterior Mean Distribution',fontsize=15)
+            plt.xlabel('Mean Difference',fontsize=15)
+            plt.ylabel('Density',fontsize=15)
+            plt.legend()
             
-            # Print the 95% credibility interval
-            print(f"95% credibility interval for the posterior mean: ({lower_bound:.4f}, {upper_bound:.4f})")
-            print(f'Confidence score of {confidence_score}%')
+            plt.show()
+
+
             return prob_present*100
             #Perform inference
         else:

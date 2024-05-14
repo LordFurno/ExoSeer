@@ -6,7 +6,6 @@ import os
 from keras.utils import Sequence
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, roc_auc_score
-from sklearn.preprocessing import label_binarize
 def z_score_standardization(data):
     mean = np.mean(data)
     std_dev = np.std(data)
@@ -127,6 +126,7 @@ test_labels,test_samples=np.array(test_labels),np.array(test_samples)
 # print(all_samples)
 # print(test_samples)
 # print(test_labels)
+print(test_labels)
 test_generator=CustomDataGenerator(test_samples, test_labels, batch_size=32)
 model=tf.keras.models.load_model(r'C:\Users\Tristan\Downloads\ExoSeer\CNN.keras')
 val_predictions=model.predict(test_generator)
