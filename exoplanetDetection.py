@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-import detection
+import detectionFunctions
 import matplotlib.pyplot as plt
 import numpy as np
 def isValid(value,valueType):#Check if a value is valid or not
@@ -77,7 +77,7 @@ while True:
 
         if event=="Display light curve" and isValid(keplerMission,"keplerMission") and isValid(searchPeriod,"period"):
             clearErrors()
-            lc=detection.getLightcurveData("Kepler-"+str(keplerMission),cadence)
+            lc=detectionFunctions.getLightcurveData("Kepler-"+str(keplerMission),cadence)
             if type(lc)==str:
                 window["-cadenceStatus-"].update("Error: Cadence does not exsist, please change to another cadence.")
             else:
@@ -88,18 +88,18 @@ while True:
             period=np.linspace(1,int(searchPeriod),10000)
             clearErrors()
             if lc is not None and type(lc)!=str:
-                    bls=detection.getBLSData(period,lc)
+                    bls=detectionFunctions.getBLSData(period,lc)
                     bls.plot()
                     plt.show(block=True)
                 #ALready been calcualted
             else:
                 #Fix this
-                lc=detection.getLightcurveData("Kepler-"+str(keplerMission),cadence)
+                lc=detectionFunctions.getLightcurveData("Kepler-"+str(keplerMission),cadence)
  
                 if type(lc)==str:
                     window["-cadenceStatus-"].update("Error: Cadence does not exsist, please change to another cadence.")
                 else:
-                    bls=detection.getBLSData(period,lc)
+                    bls=detectionFunctions.getBLSData(period,lc)
                     bls.plot()
                     plt.show(block=True)
                 #Need to get lc
@@ -109,17 +109,17 @@ while True:
             print(len(period))
             if lc is not None and type(lc)!=str:
                 print("Calculating planets")
-                planets=detection.findPlanets(period,lc)
+                planets=detectionFunctions.findPlanets(period,lc)
                 print(f"Planets: {planets}")
             else:
                 print("Getting light curve")
-                lc=detection.getLightcurveData("Kepler-"+str(keplerMission),cadence)
+                lc=detectionFunctions.getLightcurveData("Kepler-"+str(keplerMission),cadence)
  
                 if type(lc)==str:
                     window["-cadenceStatus-"].update("Error: Cadence does not exsist, please change to another cadence.")
                 else:
                     print("Calculating planets")
-                    planets=detection.findPlanets(period,lc)
+                    planets=detectionFunctions.findPlanets(period,lc)
                     planets=list(planets.items())
                     planets.sort(key=lambda x:x[1][4],reverse=True)
                     print(f"Planets: {planets}")

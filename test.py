@@ -1,17 +1,3 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-filePath=r"C:\Users\Tristan\Downloads\table_K2-18-b-Madhusudhan-et-al.-2023.csv"
-data=pd.read_csv(filePath)
-wavelengths=data["CENTRALWAVELNG"]
-transitDepths=data["PL_TRANDEP"]
-plt.figure(0)
-plt.xticks(fontsize=15)
-plt.yticks(fontsize=15)
-plt.ylabel("Transit Depth (%)",fontsize=15)
-plt.xlabel("Central Wavelength (microns)",fontsize=15)
-plt.rcParams.update({'font.size': 15})
-plt.plot(wavelengths,transitDepths)
-plt.show(block=True)
 #Making sure data is different
 import random
 import pandas as pd
@@ -24,7 +10,7 @@ for i in range(10):
     print(index)
     #C:\Users\Tristan\Downloads\ExoSeer\Data\Training\CO2\CO2-1.csv
     #C:\Users\Tristan\Downloads\ExoSeer\Data\Training\O2
-    filePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\N2-O2\N2' + f'-O2-{index}.csv'
+    filePath=r'C:\Users\Tristan\Downloads\ExoSeer\Data\Training\O2\O2' + f'-{index}.csv'
     data=pd.read_csv(filePath)
     wavelength=np.array(data.iloc[:, 0])
     total=np.array(data.iloc[:, 1])
