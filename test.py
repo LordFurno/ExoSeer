@@ -21,3 +21,4 @@ for i in range(10):
     plt.xlabel("Wavelength [um]",fontsize=15)
     plt.ylabel("Transmittance",fontsize=15)
     plt.show(block=True)
+
